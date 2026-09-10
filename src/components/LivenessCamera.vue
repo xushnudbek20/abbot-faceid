@@ -11,8 +11,10 @@ import LivenessInstructions from '@/components/LivenessInstructions.vue'
 interface Props {
   type: 'in' | 'out'
   comment?: string
-  // xpert-api /hr/in-outs `warehouse_id` (ixtiyoriy) kutadi
-  warehouseId?: number
+  // /hr/in-outs `location_id` (ixtiyoriy) — xodimning HR ish joyi.
+  // Geofence backendda xodimning biriktirilgan ish joylari bo'yicha tekshiriladi;
+  // bu faqat ma'lumot uchun yuboriladi.
+  locationId?: number | null
   // Geofence tekshiruvi uchun foydalanuvchining joriy koordinatasi (backendga yuboriladi)
   latitude?: number | null
   longitude?: number | null
@@ -179,8 +181,8 @@ const handleConfirm = async () => {
     if (commentInput.value) {
       formData.append('comment', commentInput.value)
     }
-    if (props.warehouseId) {
-      formData.append('warehouse_id', String(props.warehouseId))
+    if (props.locationId) {
+      formData.append('location_id', String(props.locationId))
     }
     // Geofence: backend masofani shu koordinata bo'yicha tekshiradi.
     if (props.latitude != null && props.longitude != null) {

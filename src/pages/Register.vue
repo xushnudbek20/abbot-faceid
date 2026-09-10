@@ -283,7 +283,9 @@ const checkLocation = async () => {
     return { lat, lon }
   }
 
-  const geoLocations = userLocations.filter((l: any) => extractCoords(l) !== null)
+  // Faqat geo-tekshiruv YOQILGAN va koordinatasi bor ish joylari masofa bo'yicha tekshiriladi.
+  // Bittasida ham yoqilmagan bo'lsa — masofa tekshirilmaydi, to'g'ridan-to'g'ri kameraga o'tiladi.
+  const geoLocations = userLocations.filter((l: any) => l.geo_check_enabled && extractCoords(l) !== null)
   if (!geoLocations.length) {
     activeLocationId.value = userLocations[0]?.id ?? userInfo.value?.location_id ?? null
     modalOpen.value = true
@@ -330,7 +332,8 @@ const checkLocation = async () => {
         minDistance = distanceMeters
       }
 
-      const validRadius = loc.radius && loc.radius > 0 ? loc.radius : 250
+      // Backend bilan bir xil: GPS aniqligi uchun radius kamida 50 m.
+      const validRadius = Math.max(Number(loc.radius) || 0, 50)
       if (distanceMeters <= validRadius) {
         foundLocationId = loc.id
         break
@@ -740,7 +743,7 @@ onMounted(async () => {
             <LivenessCamera
               :key="userInfo?.on_work_status == 1 ? 'out' : 'in'"
               :type="userInfo?.on_work_status == 1 ? 'out' : 'in'"
-              :warehouse-id="activeLocationId || userInfo?.location_id || 0"
+              :location-id="activeLocationId || userInfo?.location_id || null"
               :latitude="userLat"
               :longitude="userLon"
               @complete="handleComplete"
