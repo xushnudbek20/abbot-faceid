@@ -27,7 +27,7 @@ function openPhotoModal(photoUrl: string) {
 }
 
 // xpert-api: xodim (Finance\Employee) User'dan alohida.
-// Mavjud endpointlar orqali: /auth/me → finance_employee_id → /finance/employees/{id}
+// /auth/me → rol/nom; /hr/my-profile → xodim kartasi (ish joyi, jadval, bugungi kirish).
 const meUser = ref<any>(null)
 const employee = ref<any>(null)
 const todayWorkDay = ref<any>(null)
@@ -62,19 +62,19 @@ const userShowInfo = computed<any>(() => {
 
 const refreshInfo = async () => {
   try {
-    const meRes: any = await $api('/auth/me')
-    meUser.value = meRes?.data ?? null
+    const [meRes, empRes] = await Promise.allSettled([
+      $api('/auth/me') as Promise<any>,
+      $api('/hr/my-profile') as Promise<any>,
+    ])
+    meUser.value = meRes.status === 'fulfilled' ? (meRes.value?.data ?? null) : meUser.value
+    employee.value = empRes.status === 'fulfilled' ? (empRes.value?.data ?? null) : null
 
-    const empId = meUser.value?.finance_employee_id
-    if (!empId) {
-      employee.value = null
-      return
+    if (empRes.status === 'rejected') {
+      console.error('my-profile:', empRes.reason)
     }
 
-    const empRes: any = await $api(`/finance/employees/${empId}`, {
-      query: { relations: 'employeeSchedule|locations', appends: 'today_first_income' },
-    })
-    employee.value = empRes?.data ?? null
+    const empId = employee.value?.id ?? meUser.value?.finance_employee_id
+    if (!empId) return
 
     // Bugungi ish kuni turi (dam olish / bayram) — auth-only self-service endpointdan.
     try {
